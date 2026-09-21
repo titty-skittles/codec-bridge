@@ -1,9 +1,18 @@
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use crate::planner::{AudioAction, ConversionPlan, VideoAction};
+use std::io::{BufRead, BufReader};
 
-pub fn convert_file(input: &Path, plan: &ConversionPlan) -> Result<PathBuf> {
+pub fn convert_file<F>(
+    input: &Path,
+    plan: &ConversionPlan,
+    duration_seconds: Option<f64>,
+    mut on_progress: F,
+) -> Result<PathBuf> 
+where
+    F:FnMut(f64),
+{
     let stem = input
         .file_stem()
         .context("Input file has no filename")?
@@ -18,6 +27,7 @@ pub fn convert_file(input: &Path, plan: &ConversionPlan) -> Result<PathBuf> {
             "-hide_banner",
             "-loglevel",
             "error",
+            "-n",
             "-i",
         ])
         .arg(input)
@@ -53,10 +63,46 @@ pub fn convert_file(input: &Path, plan: &ConversionPlan) -> Result<PathBuf> {
         }
     }
 
-    let status = command
+    command
+        .args([
+            "-progress",
+            "pipe:1",
+            "-nostats",
+        ]);
+
+    let mut child = command
         .arg(&output)
-        .status()
+        .stdout(Stdio::piped())
+        .spawn()
         .context("Failed to run ffmpeg")?;
+
+    let stdout = child
+        .stdout
+        .take()
+        .context("Failed to capture ffmpeg progress")?;
+
+    let reader = BufReader::new(stdout);
+
+    for line in reader.lines() {
+        let line = line?;
+
+        if let Some(value) = line.strip_prefix("out_time_us=") {
+            if let (Ok(microseconds), Some(duration)) = 
+                (value.parse::<f64>(), duration_seconds)
+            {
+                if duration > 0.0 {
+                    let seconds = microseconds / 1_000_000.0;
+                    let percent = (seconds / duration * 100.0).clamp(0.0,100.0);
+
+                    on_progress(percent);
+                }
+            }
+        }
+    }
+
+    let status = child
+        .wait()
+        .context("Failed to wait for ffmpeg")?;
 
     if !status.success() {
         anyhow::bail!("ffmpeg conversion failed");

@@ -2,6 +2,7 @@ mod media;
 mod probe;
 mod converter;
 mod planner;
+mod tui;
 
 use anyhow::Result;
 use clap::Parser;
@@ -22,25 +23,25 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    let mut paths = Vec::new();
+
     for input in &args.inputs {
         if input.is_dir() {
             for entry in fs::read_dir(input)? {
                 let path = entry?.path();
 
                 if path.is_file() && is_media_file(&path) {
-                    if let Err(error) = process_file(&path) {
-                        eprintln!("Failed: {}\n{error:#}", path.display());
-                    }
+                    paths.push(path);
                 }
             }
+        } else if input.is_file() {
+            paths.push(input.clone());
         } else {
-            if let Err(error) = process_file(input) {
-                eprintln!("Failed: {}\n{error:#}", input.display());
-            }
+            eprintln!("Input not found: {}", input.display());
         }
     }
 
-    Ok(())
+    tui::run(paths)
 }
 
 fn process_file(input: &std::path::Path) -> Result<()> {
@@ -67,13 +68,6 @@ fn process_file(input: &std::path::Path) -> Result<()> {
             audio.codec,
             plan.audio.description()
         );
-    }
-
-    if plan.needs_conversion() {
-        let output = converter::convert_file(input, &plan)?;
-        println!("Converted file: {}", output.display());
-    } else {
-        println!("No conversion needed.");
     }
 
     Ok(())

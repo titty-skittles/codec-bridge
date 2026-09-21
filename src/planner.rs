@@ -1,18 +1,18 @@
 use crate::media::{MediaFile, MediaStream};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum VideoAction {
     Copy,
     TranscodeDnxhr,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AudioAction {
     Copy,
     ConvertToPcm,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConversionPlan {
     pub video: VideoAction,
     pub audio: AudioAction,

@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub struct MediaFile {
     pub streams: Vec<MediaStream>,
+    pub duration_seconds: Option<f64>,
 }
 
 

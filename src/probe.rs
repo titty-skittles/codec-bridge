@@ -6,13 +6,18 @@ use crate::media::{AudioStream, MediaFile, MediaStream, VideoStream};
 
 
 #[derive(Debug, Deserialize)]
-pub struct ProbeOutput {
+struct ProbeOutput {
     streams: Vec<ProbeStream>,
+    format: Option<ProbeFormat>,
 }
 
+#[derive(Debug, Deserialize)]
+struct ProbeFormat {
+    duration: Option<String>,
+}
 
 #[derive(Debug, Deserialize)]
-pub struct ProbeStream {
+struct ProbeStream {
     codec_name: Option<String>,
     codec_type: Option<String>,
     width: Option<u32>,
@@ -45,6 +50,13 @@ pub fn probe_file(path: &Path) -> Result<MediaFile> {
         serde_json::from_slice(&output.stdout)
             .context("ffprobe output was not valid UTF-8")?;
 
+    let duration_seconds = probe
+        .format
+        .as_ref()
+        .and_then(|format| format.duration.as_ref())
+        .and_then(|duration| duration.parse::<f64>().ok());
+
+
     let streams = probe
         .streams
         .into_iter()
@@ -70,5 +82,8 @@ pub fn probe_file(path: &Path) -> Result<MediaFile> {
         })
     .collect();
 
-    Ok(MediaFile { streams })
+    Ok(MediaFile { 
+        streams,
+        duration_seconds,
+    })
 }
