@@ -57,13 +57,13 @@ pub fn draw(frame: &mut Frame, app: &App) {
         })
         .count();
 
-    let summary = Paragraph::new(format!(
-        "Completed: {complete} / {total}"
+   let summary = Paragraph::new(format!(
+        "Completed: {complete}/{total}    Pending: {pending}    Failed: {failed}"
     ))
     .block(
         Block::default()
             .borders(Borders::ALL)
-            .title(" Queue "),
+            .title(" Queue Progress "),
     );
 
     frame.render_widget(summary, areas[0]);
@@ -100,24 +100,35 @@ pub fn draw(frame: &mut Frame, app: &App) {
         .iter()
         .filter(|job| job.enabled)
         .map(|job| {
-            let symbol = match job.status {
-                JobStatus::Ready => "•",
-                JobStatus::NotNeeded => "-",
-                JobStatus::Converting => "▶",
-                JobStatus::Complete => "✓",
-                JobStatus::Failed(_) => "!",
-            };
-
             let name = job
                 .path
                 .file_name()
                 .map(|name| name.to_string_lossy())
                 .unwrap_or_else(|| job.path.to_string_lossy());
 
-            ListItem::new(format!(
-                "{symbol} {name}  {}",
-                job.status.description()
-            ))
+            let text = match &job.status {
+                JobStatus::Ready => {
+                    format!("• {name}  Pending")
+                }
+
+                JobStatus::NotNeeded => {
+                    format!("- {name}  Not needed")
+                }
+
+                JobStatus::Converting => {
+                    format!("▶ {name}  {:.0}%", job.progress)
+                }
+
+                JobStatus::Complete => {
+                    format!("✓ {name}  Complete")
+                }
+
+                JobStatus::Failed(error) => {
+                    format!("! {name}  Failed: {error}")
+                }
+            };
+
+            ListItem::new(text)
         })
         .collect();
 

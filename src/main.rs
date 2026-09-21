@@ -3,6 +3,7 @@ mod probe;
 mod converter;
 mod planner;
 mod tui;
+mod output;
 
 use anyhow::Result;
 use clap::Parser;
