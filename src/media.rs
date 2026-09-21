@@ -27,3 +27,24 @@ pub struct AudioStream {
     pub sample_rate: Option<u32>,
     pub channels: Option<u32>,
 }
+
+impl MediaFile {
+    pub fn first_video(&self) -> Option<&VideoStream> {
+        self.streams.iter().find_map(|stream| {
+            match stream {
+                MediaStream::Video(video) => Some(video),
+                _ => None,
+            }
+        })
+    }
+
+    pub fn first_audio(&self) -> Option<&AudioStream> {
+        self.streams.iter().find_map(|stream| {
+            match stream {
+                MediaStream::Audio(audio) => Some(audio),
+                _ => None,
+            }
+        })
+    }
+}
+
