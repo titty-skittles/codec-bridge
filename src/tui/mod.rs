@@ -43,8 +43,22 @@ pub fn run(paths: Vec<std::path::PathBuf>) -> Result<()> {
                     KeyCode::Down | KeyCode::Char('j') => app.next(),
                     KeyCode::Up | KeyCode::Char('k') => app.previous(),
                     KeyCode::Char(' ') => app.toggle_selected(),
-                    KeyCode::Enter => app.run_conversions(),
-                    KeyCode::Char('v') => app.toggle_video_mode(),
+                    KeyCode::Enter => {
+                        if matches!(app.page, app::Page::Queue) {
+                            app.run_conversions();
+
+                            if app.worker_running {
+                                app.page = app::Page::Progress;
+                            }
+                        }
+                    }
+                    KeyCode::Char('v') => {
+                        match app.page {
+                            app::Page::Queue => app.toggle_video_mode(),
+                            app::Page::Preferences => app.toggle_default_video_preference(),
+                            app::Page::Progress => {}
+                        }
+                    }
                     KeyCode::Tab => app.next_page(),
                     KeyCode::BackTab => app.previous_page(),
                     KeyCode::Char('1') => app.page = app::Page::Queue,

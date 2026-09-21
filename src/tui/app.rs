@@ -6,7 +6,6 @@ use std::thread;
 use crate::media::MediaFile;
 use crate::planner::{self, ConversionPlan, PlanningPreferences, VideoPreference};
 use crate::probe;
-use crate::tui::app::Page::Progress;
 
 #[derive(Debug)]
 pub enum JobStatus {
@@ -39,11 +38,11 @@ pub struct App {
     pub should_quit: bool,
     pub jobs: Vec<Job>,
     pub selected: usize,
-
     pub worker_tx: Sender<WorkerMessage>,
     pub worker_rx: Receiver<WorkerMessage>,
-
     pub page: Page,
+    pub default_preferences: PlanningPreferences,
+    pub worker_running: bool,
 }
 
 #[derive(Debug)]
@@ -52,6 +51,7 @@ enum WorkerMessage {
     Complete(usize),
     Failed(usize, String),
     Progress(usize, f64),
+    QueueComplete,
 }
 
 impl JobStatus {
@@ -76,9 +76,16 @@ impl App {
             selected: 0,
             worker_tx,
             worker_rx,
-
             page: Page::Queue,
+            default_preferences: PlanningPreferences { video: VideoPreference::Preserve, },
+            worker_running: false,
         }
+    }
+
+    pub fn active_job(&self) -> Option<&Job> {
+        self.jobs
+            .iter()
+            .find(|job| matches!(job.status, JobStatus::Converting))
     }
 
     pub fn next_page(&mut self) {
@@ -97,14 +104,21 @@ impl App {
         };
     }
 
+    pub fn toggle_default_video_preference(&mut self) {
+        self.default_preferences.video =
+            match self.default_preferences.video {
+                VideoPreference::Preserve => VideoPreference::ForceDnxhr,
+                VideoPreference::ForceDnxhr => VideoPreference::Preserve,
+            };
+    }
+
     pub fn add_path(&mut self, path: PathBuf) -> Result<()> {
         let media = probe::probe_file(&path)?;
 
-        let preferences = PlanningPreferences {
-            video: VideoPreference::Preserve,
-        };
-
-        let plan = planner::plan_conversion(&media, &preferences);
+        let plan = planner::plan_conversion(
+            &media, 
+            &self.default_preferences
+        );
         let enabled = plan.needs_conversion();
 
         let status = if enabled {
@@ -178,6 +192,9 @@ impl App {
                         job.status = JobStatus::Failed(error);
                     }
                 }
+                WorkerMessage::QueueComplete => {
+                    self.worker_running = false;
+                }
             }
         }
     }
@@ -216,6 +233,10 @@ impl App {
     }
 
     pub fn run_conversions(&mut self) {
+        if self.worker_running {
+            return;
+        }
+
         let jobs: Vec<(usize, std::path::PathBuf, ConversionPlan, Option<f64>)> = self
             .jobs
             .iter()
@@ -230,6 +251,11 @@ impl App {
                 )
             })
             .collect();
+        if jobs.is_empty() {
+            return;
+        }
+
+        self.worker_running = true;
 
         let tx = self.worker_tx.clone();
 
@@ -257,6 +283,7 @@ impl App {
                     }
                 }
             }
+            let _ = tx.send(WorkerMessage::QueueComplete);
         });
     }
 }

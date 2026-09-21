@@ -18,7 +18,7 @@ pub struct ConversionPlan {
     pub audio: AudioAction,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum VideoPreference {
     Preserve,
     ForceDnxhr,

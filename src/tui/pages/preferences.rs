@@ -4,11 +4,17 @@ use ratatui::{
 };
 
 use crate::tui::app::App;
+use crate::planner::VideoPreference;
 
-pub fn draw(frame: &mut Frame, _app: &App) {
-    let widget = Paragraph::new(
-        "Preferences\n\nDefault video plan: Preserve\nDefault audio plan: PCM when required"
-    )
+pub fn draw(frame: &mut Frame, app: &App) {
+    let video = match app.default_preferences.video {
+        VideoPreference::Preserve => "Preserve compatible video",
+        VideoPreference::ForceDnxhr => "Force DNxHR",
+    };
+
+    let widget = Paragraph::new(format!(
+        "Default video plan\n\n{video}\n\nPress v to toggle"
+    ))
     .block(
         Block::default()
             .borders(Borders::ALL)
