@@ -6,6 +6,7 @@ use std::thread;
 use crate::media::MediaFile;
 use crate::planner::{self, ConversionPlan, PlanningPreferences, VideoPreference};
 use crate::probe;
+use crate::tui::app::Page::Progress;
 
 #[derive(Debug)]
 pub enum JobStatus {
@@ -14,6 +15,13 @@ pub enum JobStatus {
     Converting,
     Complete,
     Failed(String),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Page {
+    Queue,
+    Preferences,
+    Progress,
 }
 
 #[derive(Debug)]
@@ -34,6 +42,8 @@ pub struct App {
 
     pub worker_tx: Sender<WorkerMessage>,
     pub worker_rx: Receiver<WorkerMessage>,
+
+    pub page: Page,
 }
 
 #[derive(Debug)]
@@ -66,7 +76,25 @@ impl App {
             selected: 0,
             worker_tx,
             worker_rx,
+
+            page: Page::Queue,
         }
+    }
+
+    pub fn next_page(&mut self) {
+        self.page = match self.page {
+            Page::Queue => Page::Preferences,
+            Page::Preferences => Page::Progress,
+            Page::Progress => Page::Queue,
+        };
+    }
+
+    pub fn previous_page(&mut self) {
+        self.page = match self.page {
+            Page::Queue => Page::Progress,
+            Page::Preferences => Page::Queue,
+            Page::Progress => Page::Preferences,
+        };
     }
 
     pub fn add_path(&mut self, path: PathBuf) -> Result<()> {
@@ -129,6 +157,7 @@ impl App {
                 WorkerMessage::Started(index) => {
                     if let Some(job) = self.jobs.get_mut(index) {
                         job.status = JobStatus::Converting;
+                        job.progress = 0.0;
                     }
                 }
 

@@ -73,6 +73,7 @@ where
     let mut child = command
         .arg(&output)
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .context("Failed to run ffmpeg")?;
 
