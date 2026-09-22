@@ -1,12 +1,15 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, Borders, Gauge, List, ListItem, Paragraph},
     Frame,
 };
 
 use crate::tui::app::{App, JobStatus};
 
-pub fn draw(frame: &mut Frame, app: &App) {
+pub fn draw(frame: &mut Frame,
+    app: &App,
+    area: Rect,
+) {
    let total = app.jobs.iter().filter(|job| job.enabled).count();
 
     let complete = app
@@ -53,7 +56,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
             Constraint::Min(1),
             Constraint::Length(1),
         ])
-        .split(frame.area());
+        .split(area);
 
     let total = app.jobs.iter().filter(|job| job.enabled).count();
 

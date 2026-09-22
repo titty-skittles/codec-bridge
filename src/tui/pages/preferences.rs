@@ -1,4 +1,5 @@
 use ratatui::{
+    layout::Rect,
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
@@ -7,7 +8,10 @@ use crate::tui::app::App;
 use crate::planner::VideoPreference;
 use crate::output::CollisionPolicy;
 
-pub fn draw(frame: &mut Frame, app: &App) {
+pub fn draw(frame: &mut Frame, 
+    app: &App,
+    area: Rect,
+) {
     let video = match app.default_preferences.video {
         VideoPreference::Preserve => "Preserve compatible video",
         VideoPreference::ForceDnxhr => "Force DNxHR",
@@ -35,5 +39,5 @@ pub fn draw(frame: &mut Frame, app: &App) {
             .title(" Preferences "),
     );
 
-    frame.render_widget(widget, frame.area());
+    frame.render_widget(widget, area);
 }

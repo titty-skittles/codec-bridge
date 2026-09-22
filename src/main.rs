@@ -10,8 +10,6 @@ use clap::Parser;
 use std::path::PathBuf;
 use std::fs;
 
-use crate::planner::PlanningPreferences;
-
 #[derive(Parser, Debug)]
 #[command(name = "codecbridge")]
 #[command(about = "Media compatibility helper")]

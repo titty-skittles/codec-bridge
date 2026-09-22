@@ -1,19 +1,23 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Rect, Direction, Layout},
     widgets::{Block, Borders, Gauge, List, ListItem, Paragraph},
     Frame,
 };
 
 use crate::tui::app::{App, JobStatus};
 
-pub fn draw(frame: &mut Frame, app: &App) {
+pub fn draw(
+    frame: &mut Frame, 
+    app: &App,
+    area: Rect,
+) {
     let areas = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Min(1),
             Constraint::Length(1),
         ])
-        .split(frame.area());
+        .split(area);
 
     let columns = Layout::default()
         .direction(Direction::Horizontal)
@@ -137,7 +141,16 @@ pub fn draw(frame: &mut Frame, app: &App) {
         .percent(progress.round() as u16);
 
 
-    let footer = Paragraph::new("↑/k up   ↓/j down   <Space> select   v video mode   <Enter> run   q quit");
+    let footer_text = if app.adding_path {
+        format!(
+            "Add file or directory: {}█    Enter confirm   Esc cancel",
+            app.path_input
+        )
+    } else {
+        "↑/k up   ↓/j down   a add   <Space> select   v video mode   <Enter> run   q quit".to_string()
+    };
+
+    let footer = Paragraph::new(footer_text);
 
     frame.render_widget(file_list, columns[0]);
     frame.render_widget(details, detail_areas[0]);

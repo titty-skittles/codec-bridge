@@ -5,7 +5,7 @@ use std::thread;
 
 use crate::media::MediaFile;
 use crate::planner::{self, ConversionPlan, PlanningPreferences, VideoPreference};
-use crate::probe;
+use crate::{is_media_file, probe};
 use crate::output::{
     self,
     CollisionPolicy,
@@ -92,6 +92,52 @@ impl App {
             default_preferences: PlanningPreferences { video: VideoPreference::Preserve, },
             worker_running: false,
             output_preferences: OutputPreferences::default(),
+            adding_path : false,
+            path_input: String::new(),
+        }
+    }
+
+    pub fn begin_add_path(&mut self) {
+        self.adding_path = true;
+        self.path_input.clear();
+    }
+
+    pub fn cancel_add_path(&mut self) {
+        self.adding_path = false;
+        self.path_input.clear();
+    }
+
+    pub fn push_path_character(&mut self, character: char) {
+        self.path_input.push(character);
+    }
+
+    pub fn pop_path_character(&mut self) {
+        self.path_input.pop();
+    }
+
+    pub fn submit_path(&mut self) {
+        let input = PathBuf::from(self.path_input.trim());
+
+        self.adding_path = false;
+        self.path_input.clear();
+
+        if input.is_file() {
+            let _ = self.add_path(input);
+            return;
+        }
+
+        if input.is_dir() {
+            let Ok(entries) = std::fs::read_dir(input) else {
+                return;
+            };
+            
+            for entry in entries.flatten() {
+                let path = entry.path();
+
+                if path.is_file() && is_media_file(&path) {
+                    let _ = self.add_path(path);
+                }
+            }
         }
     }
 

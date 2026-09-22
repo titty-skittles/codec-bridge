@@ -38,8 +38,31 @@ pub fn run(paths: Vec<std::path::PathBuf>) -> Result<()> {
 
         if event::poll(std::time::Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
+                if app.adding_path {
+                    match key.code {
+                        KeyCode::Enter => app.submit_path(),
+
+                        KeyCode::Esc => app.cancel_add_path(),
+
+                        KeyCode:: Backspace => app.pop_path_character(),
+
+                        KeyCode::Char(character) => {
+                            app.push_path_character(character);
+                        }
+
+                        _ => {}
+                    }
+
+                    continue; 
+                }
+
                 match key.code {
                     KeyCode::Char('q') => app.should_quit = true,
+                    KeyCode::Char('a') => {
+                        if matches!(app.page, app::Page::Queue) {
+                            app.begin_add_path();
+                        }
+                    }
                     KeyCode::Down | KeyCode::Char('j') => app.next(),
                     KeyCode::Up | KeyCode::Char('k') => app.previous(),
                     KeyCode::Char(' ') => app.toggle_selected(),
