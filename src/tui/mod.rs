@@ -59,6 +59,11 @@ pub fn run(paths: Vec<std::path::PathBuf>) -> Result<()> {
                             app::Page::Progress => {}
                         }
                     }
+                    KeyCode::Char('c') => {
+                        if matches!(app.page, app::Page::Preferences) {
+                            app.cycle_collision_policy();
+                        }
+                    }
                     KeyCode::Tab => app.next_page(),
                     KeyCode::BackTab => app.previous_page(),
                     KeyCode::Char('1') => app.page = app::Page::Queue,

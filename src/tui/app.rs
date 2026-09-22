@@ -6,6 +6,12 @@ use std::thread;
 use crate::media::MediaFile;
 use crate::planner::{self, ConversionPlan, PlanningPreferences, VideoPreference};
 use crate::probe;
+use crate::output::{
+    self,
+    CollisionPolicy,
+    OutputPreferences,
+    OutputResolution,
+};
 
 #[derive(Debug)]
 pub enum JobStatus {
@@ -13,6 +19,7 @@ pub enum JobStatus {
     NotNeeded,
     Converting,
     Complete,
+    Skipped(String),
     Failed(String),
 }
 
@@ -43,11 +50,15 @@ pub struct App {
     pub page: Page,
     pub default_preferences: PlanningPreferences,
     pub worker_running: bool,
+    pub output_preferences: OutputPreferences,
+    pub adding_path: bool,
+    pub path_input: String,
 }
 
 #[derive(Debug)]
 enum WorkerMessage {
     Started(usize),
+    Skipped(usize, String),
     Complete(usize),
     Failed(usize, String),
     Progress(usize, f64),
@@ -62,6 +73,7 @@ impl JobStatus {
             JobStatus::Converting => "Converting",
             JobStatus::Complete => "Complete",
             JobStatus::Failed(_) => "Failed",
+            JobStatus::Skipped(_) => "Skipped",
         }
     }
 }
@@ -79,9 +91,18 @@ impl App {
             page: Page::Queue,
             default_preferences: PlanningPreferences { video: VideoPreference::Preserve, },
             worker_running: false,
+            output_preferences: OutputPreferences::default(),
         }
     }
 
+    pub fn cycle_collision_policy(&mut self) {
+        self.output_preferences.collision = 
+            match self.output_preferences.collision {
+                CollisionPolicy::Skip => CollisionPolicy::Rename,
+                CollisionPolicy::Rename => CollisionPolicy::Overwrite,
+                CollisionPolicy::Overwrite => CollisionPolicy::Skip,
+            };
+    }
     pub fn active_job(&self) -> Option<&Job> {
         self.jobs
             .iter()
@@ -175,6 +196,12 @@ impl App {
                     }
                 }
 
+                WorkerMessage::Skipped(index, reason) => {
+                    if let Some(job) = self.jobs.get_mut(index) {
+                        job.status = JobStatus::Skipped(reason);
+                    }
+                }
+
                 WorkerMessage::Progress(index, percent) => {
                     if let Some(job) = self.jobs.get_mut(index) {
                         job.progress = percent;
@@ -258,13 +285,44 @@ impl App {
         self.worker_running = true;
 
         let tx = self.worker_tx.clone();
+        let output_preferences = self.output_preferences.clone();
 
         thread::spawn(move || {
             for (index, path, plan, duration_seconds) in jobs {
                 let _ = tx.send(WorkerMessage::Started(index));
 
+                let output = match output::resolve_output_path(
+                    &path,
+                    &output_preferences,
+                ) {
+                    Ok(OutputResolution::Path(path)) => path,
+
+                    Ok(OutputResolution::Skip) => {
+                        let _ = tx.send(WorkerMessage::Skipped(
+                                index,
+                                "Output already  exists".to_string(),
+                        ));
+                        continue;
+                    }
+
+                    Err(error) => {
+                        let _ = tx.send(WorkerMessage::Failed(
+                                index,
+                                error.to_string(),
+                        ));
+                        continue;
+                    }
+                };
+
+                let overwrite = matches!(
+                    output_preferences.collision,
+                    CollisionPolicy::Overwrite
+                );
+
                 match crate::converter::convert_file(
                     &path,
+                    &output,
+                    overwrite,
                     &plan,
                     duration_seconds,
                     |percent| {

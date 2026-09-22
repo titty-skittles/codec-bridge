@@ -6,6 +6,8 @@ use std::io::{BufRead, BufReader};
 
 pub fn convert_file<F>(
     input: &Path,
+    output: &Path,
+    overwrite: bool,
     plan: &ConversionPlan,
     duration_seconds: Option<f64>,
     mut on_progress: F,
@@ -13,21 +15,19 @@ pub fn convert_file<F>(
 where
     F:FnMut(f64),
 {
-    let stem = input
-        .file_stem()
-        .context("Input file has no filename")?
-        .to_string_lossy();
-
-    let output = input.with_file_name(format!("{stem}_codecbridge.mov"));
-
     let mut command = Command::new("ffmpeg");
+
+    if overwrite {
+        command.arg("-y");
+    } else {
+        command.arg("-n");
+    }
     
     command
         .args([
             "-hide_banner",
             "-loglevel",
             "error",
-            "-n",
             "-i",
         ])
         .arg(input)
@@ -71,7 +71,7 @@ where
         ]);
 
     let mut child = command
-        .arg(&output)
+        .arg(output)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -109,7 +109,7 @@ where
         anyhow::bail!("ffmpeg conversion failed");
     }
 
-    Ok(output)
+    Ok(output.to_path_buf())
 }
 
 impl ConversionPlan {

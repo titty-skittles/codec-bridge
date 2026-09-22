@@ -17,6 +17,14 @@ pub fn draw(frame: &mut Frame, app: &App) {
         })
         .count();
 
+    let skipped = app
+        .jobs
+        .iter()
+        .filter(|job| {
+            job.enabled && matches!(job.status, JobStatus::Skipped(_))
+        })
+        .count();
+
     let failed = app
         .jobs
         .iter()
@@ -34,7 +42,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         .count();
 
     let pending = total
-        .saturating_sub(complete + failed + converting); 
+        .saturating_sub(complete + skipped + failed + converting); 
 
 
     let areas = Layout::default()
@@ -58,7 +66,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         .count();
 
    let summary = Paragraph::new(format!(
-        "Completed: {complete}/{total}    Pending: {pending}    Failed: {failed}"
+        "Completed: {complete}/{total}    Pending: {pending}    Skipped: {skipped}    Failed: {failed}"
     ))
     .block(
         Block::default()
@@ -113,6 +121,10 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
                 JobStatus::NotNeeded => {
                     format!("- {name}  Not needed")
+                }
+
+                JobStatus::Skipped(reason) => {
+                    format!("- {name} SKipped: {reason}")
                 }
 
                 JobStatus::Converting => {
