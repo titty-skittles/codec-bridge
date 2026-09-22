@@ -140,21 +140,8 @@ pub fn draw(
         )
         .percent(progress.round() as u16);
 
-
-    let footer_text = if app.adding_path {
-        format!(
-            "Add file or directory: {}█    Enter confirm   Esc cancel",
-            app.path_input
-        )
-    } else {
-        "↑/k up   ↓/j down   a add   <Space> select   v video mode   <Enter> run   q quit".to_string()
-    };
-
-    let footer = Paragraph::new(footer_text);
-
     frame.render_widget(file_list, columns[0]);
     frame.render_widget(details, detail_areas[0]);
     frame.render_widget(progress_bar, detail_areas[1]);
-    frame.render_widget(footer, areas[1]);
 }
 
