@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone)]
 pub enum OutputDirectory {
     SameAsSource,
+    Subdirectory(String),
     Custom(PathBuf),
 }
 
@@ -24,8 +25,10 @@ pub struct OutputPreferences {
 impl Default for OutputPreferences {
     fn default() -> Self {
         Self {
-            directory: OutputDirectory::SameAsSource,
-            suffix: "_codecbridge".to_string(),
+            directory: OutputDirectory::Subdirectory(
+                "codecbrdige".to_string(),
+            ),
+            suffix: "_cb".to_string(),
             collision: CollisionPolicy::Skip,
         }
     }
@@ -51,7 +54,25 @@ pub fn resolve_output_path(
             .context("Input file has no parent directory")?
             .to_path_buf(),
 
-        OutputDirectory::Custom(path) => path.clone(),
+        OutputDirectory::Subdirectory(name) => {
+            let parent = input
+                .parent()
+                .context("Input file has no parent directory")?;
+
+            let directory = parent.join(name);
+
+            std::fs::create_dir_all(&directory)
+                .context("Failed to create output directory")?;
+
+            directory
+        }
+
+        OutputDirectory::Custom(path) => {
+            std::fs::create_dir_all(path)
+                .context("Failed to create output directory")?;
+
+            path.clone()
+        }
     };
 
     let filename = format!("{stem}{}.mov", preferences.suffix);

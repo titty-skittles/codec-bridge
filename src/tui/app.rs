@@ -9,6 +9,7 @@ use crate::{is_media_file, probe};
 use crate::output::{
     self,
     CollisionPolicy,
+    OutputDirectory,
     OutputPreferences,
     OutputResolution,
 };
@@ -88,7 +89,7 @@ impl App {
             selected: 0,
             worker_tx,
             worker_rx,
-            page: Page::Queue,
+            page: Page::Preferences,
             default_preferences: PlanningPreferences { video: VideoPreference::Preserve, },
             worker_running: false,
             output_preferences: OutputPreferences::default(),
@@ -116,7 +117,8 @@ impl App {
     }
 
     pub fn submit_path(&mut self) {
-        let input = PathBuf::from(self.path_input.trim());
+        let normalized = normalize_path_input(&self.path_input);
+        let input = PathBuf::from(normalized);
 
         self.adding_path = false;
         self.path_input.clear();
@@ -139,6 +141,25 @@ impl App {
                 }
             }
         }
+    }
+
+    pub fn cycle_output_directory(&mut self) {
+        self.output_preferences.directory =
+            match &self.output_preferences.directory {
+                OutputDirectory::SameAsSource => {
+                    OutputDirectory::Subdirectory(
+                        "codecbridge".to_string()
+                    )
+                }
+
+                OutputDirectory::Subdirectory(_) => {
+                    OutputDirectory::SameAsSource
+                }
+
+                OutputDirectory::Custom(_) => {
+                    OutputDirectory::SameAsSource
+                }
+            };
     }
 
     pub fn cycle_collision_policy(&mut self) {
@@ -305,6 +326,20 @@ impl App {
         };
     }
 
+    pub fn remove_selected(&mut self) {
+        if self.jobs.is_empty() {
+            return;
+        }
+
+        self.jobs.remove(self.selected);
+
+        if self.jobs.is_empty() {
+            self.selected = 0;
+        } else if self.selected >= self.jobs.len() {
+            self.selected = self.jobs.len() - 1;
+        }
+    }
+
     pub fn run_conversions(&mut self) {
         if self.worker_running {
             return;
@@ -390,4 +425,20 @@ impl App {
             let _ = tx.send(WorkerMessage::QueueComplete);
         });
     }
+}
+
+fn normalize_path_input(input: &str) -> String {
+    let trimmed = input.trim();
+
+    let trimmed = trimmed
+        .strip_prefix('\'')
+        .and_then(|value| value.strip_suffix('\''))
+        .unwrap_or(trimmed);
+
+    let trimmed = trimmed
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+        .unwrap_or(trimmed);
+
+    trimmed.replace("\\ ", " ")
 }

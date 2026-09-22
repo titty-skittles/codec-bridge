@@ -24,19 +24,31 @@ fn main() -> Result<()> {
 
     let mut paths = Vec::new();
 
-    for input in &args.inputs {
-        if input.is_dir() {
-            for entry in fs::read_dir(input)? {
-                let path = entry?.path();
+    if args.inputs.is_empty() {
+        let current_dir = std::env::current_dir()?;
 
-                if path.is_file() && is_media_file(&path) {
-                    paths.push(path);
-                }
+        for entry in fs::read_dir(current_dir)? {
+            let path = entry?.path();
+
+            if path.is_file() && is_media_file(&path) {
+                paths.push(path);
             }
-        } else if input.is_file() {
-            paths.push(input.clone());
-        } else {
-            eprintln!("Input not found: {}", input.display());
+        }
+    } else {
+        for input in &args.inputs {
+            if input.is_dir() {
+                for entry in fs::read_dir(input)? {
+                    let path = entry?.path();
+
+                    if path.is_file() && is_media_file(&path) {
+                        paths.push(path);
+                    }
+                }
+            } else if input.is_file() {
+                paths.push(input.clone());
+            } else {
+                eprintln!("Input not found: {}", input.display());
+            }
         }
     }
 

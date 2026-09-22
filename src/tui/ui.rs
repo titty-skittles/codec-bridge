@@ -63,12 +63,12 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         match app.page {
             Page::Queue => {
-                "↑↓/jk move | <Space> toggle | a add file/path | v video | <Enter> run | Tab next | q quit"
+                "↑↓/jk move | <Space> toggle | a add file/path | x remove | v video | <Enter> run | Tab next | q quit"
                     .to_string()
             }
 
             Page::Preferences => {
-                "v video default | c collision policy | Tab next | q quit"
+                "v video default | o output location | c collision policy | Tab next | q quit"
                     .to_string()
             }
 

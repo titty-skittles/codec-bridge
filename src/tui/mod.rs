@@ -75,6 +75,11 @@ pub fn run(paths: Vec<std::path::PathBuf>) -> Result<()> {
                             }
                         }
                     }
+                    KeyCode::Char('o') => {
+                        if matches!(app.page, app::Page::Preferences) {
+                            app.cycle_output_directory();
+                        }
+                    }
                     KeyCode::Char('v') => {
                         match app.page {
                             app::Page::Queue => app.toggle_video_mode(),
@@ -85,6 +90,11 @@ pub fn run(paths: Vec<std::path::PathBuf>) -> Result<()> {
                     KeyCode::Char('c') => {
                         if matches!(app.page, app::Page::Preferences) {
                             app.cycle_collision_policy();
+                        }
+                    }
+                    KeyCode::Char('x') => {
+                        if matches!(app.page, app::Page::Queue) {
+                            app.remove_selected();
                         }
                     }
                     KeyCode::Tab => app.next_page(),
