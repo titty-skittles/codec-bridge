@@ -155,10 +155,4 @@ pub fn draw(frame: &mut Frame,
         );
 
     frame.render_widget(list, areas[2]);
-
-    let footer =
-        Paragraph::new("1 Queue   2 Preferences   3 Progress   Tab next   q quit");
-
-    frame.render_widget(footer, areas[3]);
-
 }

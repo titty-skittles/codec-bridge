@@ -29,16 +29,16 @@ pub fn draw(frame: &mut Frame, app: &App) {
 }
 
 fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
-    let queue = if matches!(app.page, Page::Queue) {
-        "[1 Queue]"
+    let  preferences = if matches!(app.page, Page::Preferences) {
+        "[1 Preferences]"
     } else {
-        " 1 Queue "
+        " 1 Preferences "
     };
 
-    let preferences = if matches!(app.page, Page::Preferences) {
-        "[2 Preferences]"
+    let queue = if matches!(app.page, Page::Queue) {
+        "[2 Queue]"
     } else {
-        " 2 Preferences "
+        " 2 Queue "
     };
 
     let progress = if matches!(app.page, Page::Progress) {
@@ -48,7 +48,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
     };
 
     let header = Paragraph::new(format!(
-        "{queue}  {preferences}  {progress}"
+        "{preferences}  {queue}  {progress}"
     ));
 
     frame.render_widget(header, area);
@@ -63,17 +63,17 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         match app.page {
             Page::Queue => {
-                "↑↓/jk move | <Space> toggle | a add file/path | x remove | v video | <Enter> run | Tab next | q quit"
+                "↑↓/jk move | <Space> toggle | a add file/path | x remove | v video | <Enter> run | <Tab> next page | q quit"
                     .to_string()
             }
 
             Page::Preferences => {
-                "v video default | o output location | c collision policy | Tab next | q quit"
+                "v video default | o output location | c collision policy | <Tab> next page | q quit"
                     .to_string()
             }
 
             Page::Progress => {
-                "1 Queue | 2 Preferences | 3 Progress | Tab next | q quit"
+                "1 Queue | 2 Preferences | 3 Progress | <Tab> next page | q quit"
                     .to_string()
             }
         }

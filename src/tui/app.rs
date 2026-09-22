@@ -178,17 +178,17 @@ impl App {
 
     pub fn next_page(&mut self) {
         self.page = match self.page {
-            Page::Queue => Page::Preferences,
-            Page::Preferences => Page::Progress,
-            Page::Progress => Page::Queue,
+            Page::Queue => Page::Progress,
+            Page::Preferences => Page::Queue,
+            Page::Progress => Page::Preferences,
         };
     }
 
     pub fn previous_page(&mut self) {
         self.page = match self.page {
-            Page::Queue => Page::Progress,
-            Page::Preferences => Page::Queue,
-            Page::Progress => Page::Preferences,
+            Page::Preferences => Page::Progress,
+            Page::Queue => Page::Preferences,
+            Page::Progress => Page::Queue,
         };
     }
 

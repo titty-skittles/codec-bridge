@@ -99,8 +99,8 @@ pub fn run(paths: Vec<std::path::PathBuf>) -> Result<()> {
                     }
                     KeyCode::Tab => app.next_page(),
                     KeyCode::BackTab => app.previous_page(),
-                    KeyCode::Char('1') => app.page = app::Page::Queue,
-                    KeyCode::Char('2') => app.page = app::Page::Preferences,
+                    KeyCode::Char('2') => app.page = app::Page::Queue,
+                    KeyCode::Char('1') => app.page = app::Page::Preferences,
                     KeyCode::Char('3') => app.page = app::Page::Progress,
                     _ => {}
                 }

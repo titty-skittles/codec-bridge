@@ -45,7 +45,7 @@ pub fn draw(frame: &mut Frame,
         {video}\n\n\
         Output\n\
         Location: {output_location}\n\
-        Filename: {{stem}}_codecbrdige.mov\n\
+        Filename: {{stem}}_cb.mov\n\
         Existing ouptut: {collision}\n\n\
         v Toggle video mode\n\
         o Change output location\n\
