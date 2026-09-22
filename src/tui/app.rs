@@ -54,6 +54,7 @@ pub struct App {
     pub output_preferences: OutputPreferences,
     pub adding_path: bool,
     pub path_input: String,
+    pub preference_selected: usize,
 }
 
 #[derive(Debug)]
